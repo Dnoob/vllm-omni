@@ -1,44 +1,42 @@
-# Benchmarks Overview and Architecture
+# Benchmarks
 
-This document explains the benchmark architecture across all benchmark assets in this repo. It describes what we measure, and where to find or plug in new scenarios. Per-task details remain in subfolder READMEs (e.g., `benchmarks/<model>/README.md`).
+This directory contains benchmark suites for evaluating different model families and infrastructure components in vLLM-Omni. Each subfolder targets a different benchmark family with its own scripts, configs, and metrics. See the per-subfolder READMEs for detailed usage.
 
-## Scope and goals
-- Establish repeatable latency/throughput measurements for multimodal LLM pipelines.
-- Provide both HF Transformers (offline) and vLLM-Omni (multi-stage/pipeline) baselines.
-- Make it easy to plug in new datasets and models with minimal changes to the runner scripts.
+## Benchmark families
 
-## Dataset and inputs
-- Default example: SeedTTS top-100 prompts (`benchmarks/build_dataset/top100.txt`) via `benchmarks/build_dataset/`.
-- Extensible: drop in new prompt files or modality-aligned payloads; keep the expected format for the consuming scripts (e.g., one prompt per line).
-- If you add a new dataset, document it under `benchmarks/<model>/README.md` and point scripts to your data path.
+### [Qwen3-Omni](qwen3-omni/README.md) — Multimodal LLM (speech + text)
 
-## Directory layout
-- `benchmarks/build_dataset/` — dataset prep utilities (e.g., SeedTTS top100).
-- `benchmarks/<model>/vllm_omni/` — vLLM-Omni pipeline benchmarks, logs, outputs.
-- `benchmarks/accuracy/` — accuracy benchmark integrations that adapt external
-  benchmark suites to vLLM-Omni serving and evaluation flows.
-- Add new tasks under `benchmarks/<model>/...` with the same pattern: `transformers/`, `vllm_omni/`, task-specific README, and (optionally) dataset prep notes.
+End-to-end benchmark for the Qwen3-Omni MoE model, comparing HF Transformers (offline) against the vLLM-Omni multi-stage pipeline.
 
-## Reference workflows
-- **HF Transformers (offline, single process)**  
-  Script (example): `benchmarks/<model>/transformers/eval_qwen3_moe_omni_transformers.sh`  
-  Outputs: `benchmark_results/perf_stats.json`, `benchmark_results/results.json`, `benchmark_results/audio/` (if audio is produced).
+- **Layout**: `qwen3-omni/transformers/` (HF baseline), `qwen3-omni/vllm_omni/` (pipeline)
+- **Dataset**: SeedTTS top-100 prompts (see `build_dataset/`)
+- **Key metrics**: `overall_tps`, per-stage `*_tps_avg`, latency distribution via `*.stats.jsonl`
 
-- **vLLM-Omni end-to-end pipeline**  
-  Script (example): `benchmarks/<model>/vllm_omni/eval_qwen3_moe_omni.sh`  
-  Outputs: `vllm_omni/logs/*.stats.jsonl` (per-stage/overall latency & TPS), `vllm_omni/logs/stage*.log`, `vllm_omni/outputs/` (text/audio artifacts).
+### [Qwen3-TTS](qwen3-tts/README.md) — Text-to-Speech
 
-- **Adding a new task/model**  
-  1) Create `benchmarks/<model>/transformers/` and/or `benchmarks/<model>/vllm_omni/` with scripts referencing your model and dataset.  
-  2) Add a task README describing dataset, configs, and expected outputs.  
-  3) Keep the output/log structure similar for easy comparison (perf_stats/results/audio or text outputs; stats.jsonl/logs for pipeline).
+Benchmarks for Qwen3-TTS models (0.6B and 1.7B variants), including online serving and async streaming modes.
 
-## Metrics to watch
-- **Throughput**: `overall_tps`, `*_tps_avg` per stage.
-- **Latency distribution**: look for long tails in `*.stats.jsonl`.
-- **Quality/completeness**: missing outputs or errors in stage logs indicate pipeline failures or misconfigurations.
+- **Layout**: `qwen3-tts/transformers/` (HF baseline), `qwen3-tts/vllm_omni/` (serving + async streaming)
+- **Key metrics**: TTFP (time to first audio packet), E2E latency, RTF (real-time factor), throughput (audio seconds / wall-clock second)
 
-## Troubleshooting
-- Verify GPU/driver/FlashAttention2 requirements for your chosen model/config.
-- Ensure network access for dataset/model downloads (Google Drive, Hugging Face, etc.).
-- If outputs are missing or slow, inspect per-stage logs and `*.stats.jsonl` for errors, stragglers, or contention.
+### [Diffusion](diffusion/README.md) — Image and Video Generation
+
+Online-serving benchmark for diffusion models, sending requests to the vLLM OpenAI-compatible endpoint.
+
+- **Tasks**: text-to-image, text-to-video, image-to-image, image-to-video
+- **Datasets**: `vbench`, `trace`, `random`
+- **Key metrics**: throughput, latency percentiles, SLO attainment
+
+### [Distributed](distributed/omni_connectors/README.md) — Cross-Node Transfer
+
+RDMA testing for cross-node distributed transfers using MooncakeTransferEngineConnector.
+
+- **Transfer modes**: copy, zerocopy, GPU (GPUDirect)
+- **Supports**: single-node and multi-node testing
+
+## Adding a new benchmark
+
+1. Create a subfolder under `benchmarks/<name>/` with scripts and a `README.md`.
+2. If comparing against HF Transformers, use a `transformers/` + `vllm_omni/` sub-layout (see `qwen3-omni/` or `qwen3-tts/` for examples).
+3. Add shared data utilities to `build_dataset/` if applicable.
+4. Update this README with a link to the new benchmark family.
