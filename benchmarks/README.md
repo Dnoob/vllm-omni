@@ -17,6 +17,7 @@ End-to-end benchmark for the Qwen3-Omni MoE model, comparing HF Transformers (of
 Benchmarks for Qwen3-TTS models (0.6B and 1.7B variants), including online serving and async streaming modes.
 
 - **Layout**: `qwen3-tts/transformers/` (HF baseline), `qwen3-tts/vllm_omni/` (serving + async streaming)
+- **Dataset**: 12 built-in English test prompts hardcoded in the benchmark scripts; cycled to reach the desired request count (default 50)
 - **Key metrics**: TTFP (time to first audio packet), E2E latency, RTF (real-time factor), throughput (audio seconds / wall-clock second)
 
 ### [Diffusion](diffusion/README.md) — Image and Video Generation
