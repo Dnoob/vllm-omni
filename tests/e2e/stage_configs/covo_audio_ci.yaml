@@ -1,0 +1,79 @@
+# Stage config for CovoAudio CI e2e tests.
+# Requires single GPU with ~40+ GiB VRAM (H100 / A100-80G).
+# Stage 0 (7B LLM) loads ~16 GiB; Stage 1 (BigVGAN) loads ~2 GiB.
+
+stage_args:
+  - stage_id: 0
+    stage_type: llm
+    runtime:
+      process: true
+      devices: "0"
+    engine_args:
+      model_stage: fused_thinker_talker
+      max_num_seqs: 1
+      model_arch: CovoAudioForConditionalGeneration
+      worker_type: ar
+      scheduler_cls: vllm_omni.core.sched.omni_ar_scheduler.OmniARScheduler
+      gpu_memory_utilization: 0.5
+      enforce_eager: true
+      trust_remote_code: true
+      engine_output_type: latent
+      enable_prefix_caching: false
+      max_num_batched_tokens: 32768
+      mm_processor_cache_gb: 0
+    is_comprehension: true
+    final_output: true
+    final_output_type: text
+    default_sampling_params:
+      temperature: 0.0
+      top_p: 1.0
+      top_k: -1
+      max_tokens: 512
+      seed: 42
+      detokenize: True
+      repetition_penalty: 1.1
+      stop_token_ids: [151645]    # <|im_end|>
+      ignore_eos: true
+
+  - stage_id: 1
+    stage_type: llm
+    runtime:
+      process: true
+      devices: "0"
+    engine_args:
+      model_stage: code2wav
+      dtype: float32
+      max_model_len: 2048
+      max_num_seqs: 1
+      model_arch: CovoAudioForConditionalGeneration
+      worker_type: generation
+      scheduler_cls: vllm_omni.core.sched.omni_generation_scheduler.OmniGenerationScheduler
+      gpu_memory_utilization: 0.2
+      enforce_eager: true
+      trust_remote_code: true
+      engine_output_type: audio
+      enable_prefix_caching: false
+      max_num_batched_tokens: 2048
+      mm_processor_cache_gb: 0
+    engine_input_source: [0]
+    custom_process_input_func: vllm_omni.model_executor.stage_input_processors.covo_audio.llm2code2wav
+    final_output: true
+    final_output_type: audio
+    default_sampling_params:
+      temperature: 0.0
+      top_p: 1.0
+      top_k: -1
+      max_tokens: 2048
+      seed: 42
+      detokenize: True
+      repetition_penalty: 1.1
+
+runtime:
+  enabled: true
+  defaults:
+    window_size: -1
+    max_inflight: 1
+  edges:
+    - from: 0
+      to: 1
+      window_size: -1

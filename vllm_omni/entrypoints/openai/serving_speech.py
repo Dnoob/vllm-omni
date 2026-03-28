@@ -48,12 +48,14 @@ _QWEN3_TTS_MODEL_STAGES = {"qwen3_tts"}
 _FISH_TTS_MODEL_STAGES = {"fish_speech_slow_ar"}
 _COSYVOICE3_TTS_MODEL_STAGES = {"cosyvoice3_talker"}
 _OMNIVOICE_TTS_MODEL_STAGES = {"omnivoice_generator"}
+_COVO_AUDIO_MODEL_STAGES = {"fused_thinker_talker"}
 _TTS_MODEL_STAGES: set[str] = (
     _VOXTRAL_TTS_MODEL_STAGES
     | _QWEN3_TTS_MODEL_STAGES
     | _FISH_TTS_MODEL_STAGES
     | _COSYVOICE3_TTS_MODEL_STAGES
     | _OMNIVOICE_TTS_MODEL_STAGES
+    | _COVO_AUDIO_MODEL_STAGES
 )
 _TTS_LANGUAGES: set[str] = {
     "Auto",
@@ -188,6 +190,7 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
             and getattr(getattr(self._tts_stage, "engine_args", None), "model_stage", None) == "fish_speech_slow_ar"
         )
         self._fish_speech_tokenizer = None
+        self._covo_audio_tokenizer = None
 
         self._is_cosyvoice3 = (
             self._tts_stage is not None
@@ -274,6 +277,10 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
             return "cosyvoice3"
         if model_stage in _OMNIVOICE_TTS_MODEL_STAGES:
             return "omnivoice"
+        if model_stage in _COVO_AUDIO_MODEL_STAGES:
+            model_arch = getattr(self._tts_stage.engine_args, "model_arch", None)
+            if model_arch and "CovoAudio" in model_arch:
+                return "covo_audio"
         return None
 
     def _compute_max_instructions_length(self) -> int:
@@ -1261,6 +1268,54 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
             },
         }
 
+    # ---- Covo-Audio helpers ----
+
+    _COVO_AUDIO_SYSTEM_PROMPT = (
+        '你是"小腾"，英文名是"Covo"，由腾讯开发的AI助手。\n'
+        "1、请使用简洁、口语化的语言和用户聊天，"
+        "你的态度积极、耐心，像一位值得信赖的朋友。\n"
+        "2、不要使用列表或编号，避免输出网址、表情符号和复杂的公式。\n"
+        "3、不评价竞争对手，不发表主观政治观点，"
+        "针对色情类、政治类、恐怖类、歧视类、暴力类的用户问题，"
+        "你要妥善应对潜在的安全风险，并给出幽默，情绪安抚以及安全的劝导。\n"
+        "请用文本和音频进行对话，交替生成5个文本token和15个音频token，"
+        "音频部分使用发音人：default_female"
+    )
+
+    def _build_covo_audio_prompt(
+        self,
+        request: OpenAICreateSpeechRequest,
+    ) -> dict[str, Any]:
+        """Build a chat-style prompt for Covo-Audio-Chat.
+
+        Covo-Audio requires a specific system prompt that instructs the model
+        to interleave text and audio tokens in its output.  We render the
+        messages through the chat template and pass prompt_token_ids so that
+        the engine does not need to re-tokenize.
+        """
+        from transformers import AutoTokenizer
+
+        if self._covo_audio_tokenizer is None:
+            model_name = self.engine_client.model_config.model
+            try:
+                self._covo_audio_tokenizer = AutoTokenizer.from_pretrained(
+                    model_name,
+                    trust_remote_code=True,
+                )
+            except Exception as exc:
+                raise RuntimeError(f"Failed to load Covo-Audio tokenizer from '{model_name}': {exc}") from exc
+
+        messages = [
+            {"role": "system", "content": self._COVO_AUDIO_SYSTEM_PROMPT},
+            {"role": "user", "content": request.input},
+        ]
+        prompt_ids = self._covo_audio_tokenizer.apply_chat_template(
+            messages,
+            tokenize=True,
+            add_generation_prompt=True,
+        )
+        return {"prompt_token_ids": prompt_ids}
+
     # ---- Common speech generation helpers ----
 
     async def _prepare_speech_generation(
@@ -1283,6 +1338,9 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
         elif self._tts_model_type == "omnivoice":
             tts_params = {}
             prompt = request.input  # Diffusion engine takes raw text
+        elif self._tts_model_type == "covo_audio":
+            prompt = self._build_covo_audio_prompt(request)
+            tts_params = {}
         elif self._is_tts:
             validation_error = self._validate_tts_request(request)
             if validation_error:
@@ -1315,6 +1373,8 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
         request_id = f"speech-{random_uuid()}"
         if self._is_fish_speech:
             model_type = "fish_speech"
+        elif self._tts_model_type == "covo_audio":
+            model_type = "covo_audio"
         elif self._tts_model_type == "voxtral_tts":
             model_type = "voxtral_tts"
         elif self._tts_model_type == "cosyvoice3":
