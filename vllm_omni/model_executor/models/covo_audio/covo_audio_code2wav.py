@@ -22,7 +22,12 @@ class CovoAudioCode2WavForConditionalGeneration(nn.Module, SupportsPP):
 
         self.vllm_config = vllm_config
         self.config = vllm_config.model_config.hf_config
-        model_path = vllm_config.model_config.model
+        model_name = vllm_config.model_config.model
+        if os.path.isdir(model_name):
+            model_path = model_name
+        else:
+            from huggingface_hub import snapshot_download
+            model_path = snapshot_download(model_name)
         token2wav_path = os.path.join(model_path, "token2wav")
 
         code2wav_config = CovoAudioCode2WavConfig()
