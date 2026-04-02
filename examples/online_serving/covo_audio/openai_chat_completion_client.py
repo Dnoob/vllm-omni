@@ -4,19 +4,16 @@ Client example for Covo-Audio-Chat with vllm-omni.
 Usage
 -----
 # Start the server first:
-#   CUDA_VISIBLE_DEVICES=0 vllm serve --omni \
-#       --model tencent/Covo-Audio-Chat \
-#       --stage-config vllm_omni/model_executor/stage_configs/covo_audio.yaml \
+#   CUDA_VISIBLE_DEVICES=0 vllm serve tencent/Covo-Audio-Chat --omni \
+#       --stage-configs-path vllm_omni/model_executor/stage_configs/covo_audio.yaml \
 #       --trust-remote-code
 
-# Text-only chat (generates text + audio response):
-python openai_chat_completion_client.py -q text -p "你好，介绍一下你自己"
-
-# Audio input chat:
-python openai_chat_completion_client.py -q audio --audio-path /path/to/audio.wav
+# Audio input chat (uses default sample audio if --audio-path not provided):
+python openai_chat_completion_client.py
+python openai_chat_completion_client.py --audio-path /path/to/audio.wav
 
 # Streaming mode:
-python openai_chat_completion_client.py -q text -p "今天天气怎么样" --stream
+python openai_chat_completion_client.py --stream
 """
 
 import base64
@@ -25,8 +22,11 @@ import sys
 import time
 
 from openai import OpenAI
-from vllm.assets.audio import AudioAsset
 from vllm.utils.argparse_utils import FlexibleArgumentParser
+
+from vllm_omni.model_executor.models.covo_audio.prompt_utils import (
+    COVO_AUDIO_SYSTEM_PROMPT,
+)
 
 openai_api_key = "EMPTY"
 openai_api_base = "http://localhost:18091/v1"
@@ -45,7 +45,7 @@ def encode_base64_content_from_file(file_path: str) -> str:
 def get_audio_url(audio_path: str | None) -> str:
     """Convert an audio path to a data URL for the API."""
     if not audio_path:
-        return AudioAsset("mary_had_lamb").url
+        audio_path = os.path.join(os.path.dirname(__file__), "sample_audio.wav")
 
     if audio_path.startswith(("data:", "http://", "https://")):
         return audio_path
@@ -67,17 +67,11 @@ def get_audio_url(audio_path: str | None) -> str:
     return f"data:{mime};base64,{b64}"
 
 
-def build_text_messages(prompt: str) -> list[dict]:
-    """Build messages for a text-only chat request."""
-    return [
-        {"role": "user", "content": [{"type": "text", "text": prompt}]},
-    ]
-
-
 def build_audio_messages(audio_path: str | None, prompt: str) -> list[dict]:
     """Build messages for an audio chat request."""
     audio_url = get_audio_url(audio_path)
     return [
+        {"role": "system", "content": COVO_AUDIO_SYSTEM_PROMPT},
         {
             "role": "user",
             "content": [
@@ -106,7 +100,9 @@ def run(args) -> None:
         "max_tokens": 2048,
         "seed": SEED,
         "detokenize": True,
-        "repetition_penalty": 1.1,
+        "repetition_penalty": 1.05,
+        "stop_token_ids": [151645],
+        "ignore_eos": True,
     }
     code2wav_params = {
         "temperature": 0.0,
@@ -114,18 +110,15 @@ def run(args) -> None:
         "top_k": -1,
         "max_tokens": 2048,
         "seed": SEED,
-        "detokenize": True,
-        "repetition_penalty": 1.1,
+        "detokenize": False,
+        "repetition_penalty": 1.05,
     }
 
     extra_body = {
         "sampling_params_list": [thinker_params, code2wav_params],
     }
 
-    if args.query_type == "audio":
-        messages = build_audio_messages(args.audio_path, args.prompt)
-    else:
-        messages = build_text_messages(args.prompt)
+    messages = build_audio_messages(args.audio_path, args.prompt)
 
     start = time.perf_counter()
 
@@ -186,18 +179,10 @@ def run(args) -> None:
 def parse_args():
     parser = FlexibleArgumentParser(description="Covo-Audio-Chat client example")
     parser.add_argument(
-        "--query-type",
-        "-q",
-        type=str,
-        default="text",
-        choices=["text", "audio"],
-        help="Query type: 'text' for text-only, 'audio' for audio input.",
-    )
-    parser.add_argument(
         "--prompt",
         "-p",
         type=str,
-        default="你好，请介绍一下你自己。",
+        default="请回答这段音频里的问题。",
         help="Text prompt.",
     )
     parser.add_argument(

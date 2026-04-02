@@ -1270,18 +1270,6 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
 
     # ---- Covo-Audio helpers ----
 
-    _COVO_AUDIO_SYSTEM_PROMPT = (
-        '你是"小腾"，英文名是"Covo"，由腾讯开发的AI助手。\n'
-        "1、请使用简洁、口语化的语言和用户聊天，"
-        "你的态度积极、耐心，像一位值得信赖的朋友。\n"
-        "2、不要使用列表或编号，避免输出网址、表情符号和复杂的公式。\n"
-        "3、不评价竞争对手，不发表主观政治观点，"
-        "针对色情类、政治类、恐怖类、歧视类、暴力类的用户问题，"
-        "你要妥善应对潜在的安全风险，并给出幽默，情绪安抚以及安全的劝导。\n"
-        "请用文本和音频进行对话，交替生成5个文本token和15个音频token，"
-        "音频部分使用发音人：default_female"
-    )
-
     def _build_covo_audio_prompt(
         self,
         request: OpenAICreateSpeechRequest,
@@ -1295,6 +1283,10 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
         """
         from transformers import AutoTokenizer
 
+        from vllm_omni.model_executor.models.covo_audio.prompt_utils import (
+            build_covo_audio_prompt_token_ids,
+        )
+
         if self._covo_audio_tokenizer is None:
             model_name = self.engine_client.model_config.model
             try:
@@ -1305,14 +1297,9 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
             except Exception as exc:
                 raise RuntimeError(f"Failed to load Covo-Audio tokenizer from '{model_name}': {exc}") from exc
 
-        messages = [
-            {"role": "system", "content": self._COVO_AUDIO_SYSTEM_PROMPT},
-            {"role": "user", "content": request.input},
-        ]
-        prompt_ids = self._covo_audio_tokenizer.apply_chat_template(
-            messages,
-            tokenize=True,
-            add_generation_prompt=True,
+        prompt_ids = build_covo_audio_prompt_token_ids(
+            self._covo_audio_tokenizer,
+            request.input,
         )
         return {"prompt_token_ids": prompt_ids}
 

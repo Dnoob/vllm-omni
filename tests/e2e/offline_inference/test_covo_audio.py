@@ -9,20 +9,12 @@ import pytest
 
 from tests.conftest import generate_synthetic_audio, modify_stage_config
 from tests.utils import hardware_test
+from vllm_omni.model_executor.models.covo_audio.prompt_utils import (
+    COVO_AUDIO_INPUT_PREFIX,
+    build_covo_audio_chat_prompt,
+)
 
 models = ["tencent/Covo-Audio-Chat"]
-
-COVO_AUDIO_SYSTEM_PROMPT = (
-    '你是"小腾"，英文名是"Covo"，由腾讯开发的AI助手。\n'
-    "1、请使用简洁、口语化的语言和用户聊天，"
-    "你的态度积极、耐心，像一位值得信赖的朋友。\n"
-    "2、不要使用列表或编号，避免输出网址、表情符号和复杂的公式。\n"
-    "3、不评价竞争对手，不发表主观政治观点，"
-    "针对色情类、政治类、恐怖类、歧视类、暴力类的用户问题，"
-    "你要妥善应对潜在的安全风险，并给出幽默，情绪安抚以及安全的劝导。\n"
-    "请用文本和音频进行对话，交替生成5个文本token和15个音频token，"
-    "音频部分使用发音人：default_female"
-)
 
 
 def get_eager_config():
@@ -49,25 +41,6 @@ def get_question(prompt_type="audio_chat"):
     return prompts.get(prompt_type, prompts["audio_chat"])
 
 
-def _build_covo_prompt(
-    prompt_text: str,
-    *,
-    has_audio: bool = False,
-    system_prompt: str = COVO_AUDIO_SYSTEM_PROMPT,
-) -> str:
-    """Build a chat-template prompt for Covo-Audio-Chat."""
-    user_content = ""
-    if has_audio:
-        user_content += "<|begofcAUDIO|><|cAUDIO|><|endofcAUDIO|>"
-    user_content += prompt_text
-
-    return (
-        f"<|im_start|>system\n{system_prompt}<|im_end|>\n"
-        f"<|im_start|>user\n{user_content}<|im_end|>\n"
-        f"<|im_start|>assistant\n"
-    )
-
-
 @pytest.mark.core_model
 @pytest.mark.omni
 @hardware_test(res={"cuda": "H100"}, num_cards={"cuda": 1})
@@ -84,7 +57,8 @@ def test_audio_to_audio(omni_runner, omni_runner_handler) -> None:
     if len(audio.shape) == 2:
         audio = audio.squeeze()
 
-    prompt = _build_covo_prompt(get_question("audio_chat"), has_audio=True)
+    user_content = COVO_AUDIO_INPUT_PREFIX + get_question("audio_chat")
+    prompt = build_covo_audio_chat_prompt(user_content)
     omni_inputs = [
         {
             "prompt": prompt,
@@ -108,7 +82,7 @@ def test_text_to_audio(omni_runner, omni_runner_handler) -> None:
     Input Modal: text
     Output Modal: audio
     """
-    prompt = _build_covo_prompt(get_question("text_only"))
+    prompt = build_covo_audio_chat_prompt(get_question("text_only"))
     omni_inputs = [{"prompt": prompt, "modalities": ["audio"]}]
 
     outputs = omni_runner.generate(omni_inputs)
