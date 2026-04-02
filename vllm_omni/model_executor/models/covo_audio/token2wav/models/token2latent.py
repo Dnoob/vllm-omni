@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from torchdiffeq import odeint
 
 from ..modules.attentions.modules import Mlp, TransformerBlock
 from ..modules.attentions.multihead_attention import MultiHeadAttention
@@ -191,6 +190,10 @@ class Token2latentFlowMatching(BaseModel):
             else:
                 return prediction
 
+        try:
+            from torchdiffeq import odeint
+        except ImportError:
+            raise ImportError("Covo-Audio code2wav requires `torchdiffeq`. Install it with: pip install torchdiffeq")
         trajectory = odeint(solver, noise, times, atol=1e-5, rtol=1e-5, method="midpoint")
         return trajectory[-1], trajectory
 

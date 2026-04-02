@@ -2,6 +2,7 @@
 E2E tests for Covo-Audio-Chat model with audio input and audio/text output.
 """
 
+import shutil
 from pathlib import Path
 
 import pytest
@@ -70,6 +71,7 @@ def _build_covo_prompt(
 @pytest.mark.core_model
 @pytest.mark.omni
 @hardware_test(res={"cuda": "H100"}, num_cards={"cuda": 1})
+@pytest.mark.skipif(shutil.which("espeak-ng") is None, reason="espeak-ng not installed")
 @pytest.mark.parametrize("omni_runner", test_params, indirect=True)
 def test_audio_to_audio(omni_runner, omni_runner_handler) -> None:
     """
