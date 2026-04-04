@@ -14,7 +14,6 @@ from torch import pow, sin
 from torch.nn import Parameter
 from torch.nn.utils import weight_norm
 
-
 # --------------- Utilities ---------------
 
 
@@ -800,6 +799,7 @@ class Token2latentFlowMatchingWithEmbed(Token2latentFlowMatching):
 
 
 # --------------- Vocoder: Latent -> Waveform (BigVGAN) ---------------
+
 
 class AMPBlock1(torch.nn.Module):
     def __init__(self, h, channels, kernel_size=3, dilation=(1, 3, 5), causal=True):

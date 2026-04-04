@@ -15,7 +15,9 @@ from vllm_omni.model_executor.models.covo_audio.prompt_utils import (
     build_covo_audio_chat_prompt,
 )
 
-SAMPLE_AUDIO_PATH = str(Path(__file__).parent.parent.parent.parent / "examples" / "offline_inference" / "covo_audio" / "sample_audio.wav")
+SAMPLE_AUDIO_PATH = str(
+    Path(__file__).parent.parent.parent.parent / "examples" / "offline_inference" / "covo_audio" / "sample_audio.wav"
+)
 
 models = ["tencent/Covo-Audio-Chat"]
 

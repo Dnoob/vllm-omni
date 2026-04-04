@@ -8,11 +8,11 @@ from torch import nn
 from transformers import BatchFeature, WhisperFeatureExtractor
 from vllm.config import VllmConfig
 from vllm.config.multimodal import BaseDummyOptions
+from vllm.inputs import MultiModalDataDict
 from vllm.model_executor.models import SupportsPP
 from vllm.model_executor.models.interfaces import SupportsMultiModal
 from vllm.model_executor.models.utils import init_vllm_registered_model
 from vllm.multimodal import MULTIMODAL_REGISTRY
-from vllm.inputs import MultiModalDataDict
 from vllm.multimodal.inputs import MultiModalFieldConfig
 from vllm.multimodal.parse import MultiModalDataItems, MultiModalDataParser
 from vllm.multimodal.processing import (
