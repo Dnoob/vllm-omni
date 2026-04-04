@@ -1,12 +1,8 @@
 # Copyright 2026 Tencent.
 from typing import Any
 
-from vllm.logger import init_logger
-
 from vllm_omni.inputs.data import OmniTokensPrompt
 from vllm_omni.model_executor.models.covo_audio.config_covo_audio import COVO_AUDIO_TOKEN_INDEX
-
-logger = init_logger(__name__)
 
 
 def llm2code2wav(
@@ -33,35 +29,8 @@ def llm2code2wav(
         token_ids = output.token_ids
 
         audio_codes = [t - COVO_AUDIO_TOKEN_INDEX for t in token_ids if t >= COVO_AUDIO_TOKEN_INDEX]
-        request_id = getattr(talker_output, "request_id", f"unknown_{i}")
-        logger.info(
-            "Request %s: total_tokens=%d, text_tokens=%d, audio_tokens=%d",
-            request_id,
-            len(token_ids),
-            len(token_ids) - len(audio_codes),
-            len(audio_codes),
-        )
-        segments = []
-        if token_ids:
-            cur = token_ids[0] >= COVO_AUDIO_TOKEN_INDEX
-            cnt = 1
-            for t in token_ids[1:]:
-                is_audio = t >= COVO_AUDIO_TOKEN_INDEX
-                if is_audio == cur:
-                    cnt += 1
-                else:
-                    segments.append(f"{'A' if cur else 'T'}{cnt}")
-                    cur, cnt = is_audio, 1
-            segments.append(f"{'A' if cur else 'T'}{cnt}")
-        logger.info("Request %s: token pattern: %s", request_id, " ".join(segments))
 
         if not audio_codes:
-            logger.info(
-                "Request %s: no audio codes in Stage-0 output "
-                "(text-only response). Sending sentinel [-1] to Stage-1; "
-                "code2wav will return silence.",
-                request_id,
-            )
             audio_codes = [-1]
 
         code2wav_inputs.append(

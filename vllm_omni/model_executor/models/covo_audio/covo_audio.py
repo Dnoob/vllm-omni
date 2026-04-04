@@ -358,7 +358,7 @@ class CovoAudioForConditionalGeneration(
             loaded_weights.update(c2w_loaded)
             return loaded_weights
 
-        llm_weights = [(k, v) for k, v in weights if k.startswith(("llm", "encoder", "audio_adapter"))]
+        llm_weights = ((k, v) for k, v in weights if k.startswith(("llm", "encoder", "audio_adapter")))
         if self.fused_thinker_talker:
             llm_loaded = self.fused_thinker_talker.load_weights(llm_weights)
             llm_loaded = add_prefix_to_loaded_weights(llm_loaded, "fused_thinker_talker")
@@ -372,12 +372,7 @@ class CovoAudioForConditionalGeneration(
         positions: torch.Tensor,
         intermediate_tensors: IntermediateTensors | None = None,
         inputs_embeds: torch.Tensor | None = None,
-        generate_audio: bool = True,
-        codec: torch.Tensor | None = None,
         sampling_metadata: SamplingMetadata | None = None,
-        logits_index: int | None = None,
-        sampler=None,
-        additional_information: dict[str, object] | None = None,
         **kwargs: object,
     ) -> torch.Tensor | IntermediateTensors | OmniOutput:
         """Route forward to the active stage.
