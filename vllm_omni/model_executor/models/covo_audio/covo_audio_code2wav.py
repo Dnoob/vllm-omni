@@ -12,8 +12,7 @@ from vllm.v1.sample.metadata import SamplingMetadata
 from vllm.v1.sample.sampler import Sampler
 
 from .config_covo_audio import CovoAudioCode2WavConfig
-from .token2wav.models.audio_decoder import Token2WavDecoder
-from .token2wav.utils.util import JsonHParams
+from .token2wav import JsonHParams, Token2WavDecoder
 
 
 class CovoAudioCode2WavForConditionalGeneration(nn.Module, SupportsPP):
@@ -53,14 +52,8 @@ class CovoAudioCode2WavForConditionalGeneration(nn.Module, SupportsPP):
         self._decoder_moved = False
         self._sampler = Sampler()
 
-        # Load speaker prompt files for voice timbre control.
-        # Look in token2wav/prompt/ under the model dir first, then fall back
-        # to the bundled prompt dir shipped with the code.
-        prompt_dir = os.path.join(token2wav_path, "prompt")
-        if not os.path.isdir(prompt_dir):
-            prompt_dir = os.path.join(os.path.dirname(__file__), "token2wav", "prompt")
-        # Store as plain tensors (not registered buffers) because the
-        # decoder is moved lazily and we need to keep them in sync.
+        # Load bundled speaker prompt files for voice timbre control.
+        prompt_dir = os.path.join(os.path.dirname(__file__), "speaker_prompt")
         self._prompt_token = torch.from_numpy(np.load(os.path.join(prompt_dir, "prompt_token.npy"))).long()
         self._prompt_latent = torch.from_numpy(np.load(os.path.join(prompt_dir, "prompt_latent.npy"))).float()
         self._spkr_embed = torch.from_numpy(np.load(os.path.join(prompt_dir, "speaker_embed.npy"))).float()
