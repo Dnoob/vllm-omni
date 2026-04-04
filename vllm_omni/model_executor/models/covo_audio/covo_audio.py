@@ -12,7 +12,8 @@ from vllm.model_executor.models import SupportsPP
 from vllm.model_executor.models.interfaces import SupportsMultiModal
 from vllm.model_executor.models.utils import init_vllm_registered_model
 from vllm.multimodal import MULTIMODAL_REGISTRY
-from vllm.multimodal.inputs import MultiModalDataDict, MultiModalFieldConfig
+from vllm.inputs import MultiModalDataDict
+from vllm.multimodal.inputs import MultiModalFieldConfig
 from vllm.multimodal.parse import MultiModalDataItems, MultiModalDataParser
 from vllm.multimodal.processing import (
     BaseDummyInputsBuilder,
