@@ -42,7 +42,7 @@ def get_question():
     return "请回答这段音频里的问题。"
 
 
-@pytest.mark.core_model
+@pytest.mark.advanced_model
 @pytest.mark.omni
 @hardware_test(res={"cuda": "H100"}, num_cards={"cuda": 1})
 @pytest.mark.parametrize("omni_runner", test_params, indirect=True)
@@ -58,13 +58,10 @@ def test_audio_to_audio(omni_runner, omni_runner_handler) -> None:
 
     user_content = COVO_AUDIO_INPUT_PREFIX + get_question()
     prompt = build_covo_audio_chat_prompt(user_content)
-    omni_inputs = [
-        {
-            "prompt": prompt,
-            "multi_modal_data": {"audio": (audio, 16000)},
-            "modalities": ["audio"],
-        }
-    ]
 
-    outputs = omni_runner.generate(omni_inputs)
-    assert len(outputs) > 0, "Expected at least one output"
+    request_config = {
+        "prompts": prompt,
+        "audios": (audio, 16000),
+        "modalities": ["audio"],
+    }
+    omni_runner_handler.send_request(request_config)
