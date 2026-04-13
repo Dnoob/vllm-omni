@@ -188,6 +188,7 @@ _OMNI_MODELS = {
         "covo_audio",
         "covo_audio_code2wav",
         "CovoAudioCode2WavForConditionalGeneration",
+    ),
     "DyninOmniForConditionalGeneration": (
         "dynin_omni",
         "dynin_omni",
