@@ -4,7 +4,6 @@
 E2E Online tests for Covo-Audio-Chat model.
 """
 
-import base64
 import os
 from pathlib import Path
 
@@ -12,17 +11,17 @@ os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 
 import pytest
 
-from tests.conftest import OmniServerParams, dummy_messages_from_mix_data
+from tests.conftest import (
+    OmniServerParams,
+    dummy_messages_from_mix_data,
+    generate_synthetic_audio,
+)
 from tests.utils import hardware_test
 from vllm_omni.model_executor.models.covo_audio.prompt_utils import (
     COVO_AUDIO_SYSTEM_PROMPT,
 )
 
-model = "/data/models/tencent-community/Covo-Audio-Chat"
-
-SAMPLE_AUDIO_PATH = str(
-    Path(__file__).parent.parent.parent.parent / "examples" / "online_serving" / "covo_audio" / "sample_audio.wav"
-)
+model = "tencent/Covo-Audio-Chat"
 
 stage_config_path = str(Path(__file__).parent.parent / "stage_configs" / "covo_audio_ci.yaml")
 
@@ -49,8 +48,7 @@ def test_audio_to_audio_001(omni_server, openai_client) -> None:
     Input Setting: stream=False
     Datasets: single request
     """
-    with open(SAMPLE_AUDIO_PATH, "rb") as f:
-        audio_data_url = f"data:audio/wav;base64,{base64.b64encode(f.read()).decode('utf-8')}"
+    audio_data_url = f"data:audio/wav;base64,{generate_synthetic_audio(2, 1, sample_rate=16000)['base64']}"
     messages = dummy_messages_from_mix_data(
         system_prompt={"role": "system", "content": COVO_AUDIO_SYSTEM_PROMPT},
         audio_data_url=audio_data_url,
