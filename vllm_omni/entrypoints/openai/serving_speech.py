@@ -50,6 +50,7 @@ _FISH_TTS_MODEL_STAGES = {"fish_speech_slow_ar"}
 _COSYVOICE3_TTS_MODEL_STAGES = {"cosyvoice3_talker"}
 _OMNIVOICE_TTS_MODEL_STAGES = {"omnivoice_generator"}
 _COVO_AUDIO_MODEL_STAGES = {"fused_thinker_talker"}
+_VOXCPM2_TTS_MODEL_STAGES = {"latent_generator"}
 _TTS_MODEL_STAGES: set[str] = (
     _VOXTRAL_TTS_MODEL_STAGES
     | _QWEN3_TTS_MODEL_STAGES
@@ -57,6 +58,7 @@ _TTS_MODEL_STAGES: set[str] = (
     | _COSYVOICE3_TTS_MODEL_STAGES
     | _OMNIVOICE_TTS_MODEL_STAGES
     | _COVO_AUDIO_MODEL_STAGES
+    | _VOXCPM2_TTS_MODEL_STAGES
 )
 _TTS_LANGUAGES: set[str] = {
     "Auto",
@@ -297,6 +299,8 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
             model_arch = getattr(self._tts_stage.engine_args, "model_arch", None)
             if model_arch and "CovoAudio" in model_arch:
                 return "covo_audio"
+        if model_stage in _VOXCPM2_TTS_MODEL_STAGES:
+            return "voxcpm2"
         return None
 
     def _compute_max_instructions_length(self) -> int:
@@ -794,6 +798,8 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
             return self._validate_fish_tts_request(request)
         if self._tts_model_type == "cosyvoice3":
             return self._validate_cosyvoice3_request(request)
+        if self._tts_model_type == "voxcpm2":
+            return None  # VoxCPM2 accepts any text input
         return self._validate_qwen_tts_request(request)
 
     def _validate_ref_audio_format(self, ref_audio: str) -> str | None:
@@ -1475,6 +1481,15 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
         elif self._tts_model_type == "covo_audio":
             prompt = self._build_covo_audio_prompt(request)
             tts_params = {}
+        elif self._tts_model_type == "voxcpm2":
+            tts_params = {}
+            additional: dict[str, Any] = {}
+            if request.ref_audio is not None:
+                wav_list, sr = await self._resolve_ref_audio(request.ref_audio)
+                additional["reference_audio"] = [[wav_list, sr]]
+            prompt = {"prompt": request.input}
+            if additional:
+                prompt["additional_information"] = additional
         elif self._is_tts:
             validation_error = self._validate_tts_request(request)
             if validation_error:
@@ -1513,6 +1528,8 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
             model_type = "voxtral_tts"
         elif self._tts_model_type == "cosyvoice3":
             model_type = "cosyvoice3"
+        elif self._tts_model_type == "voxcpm2":
+            model_type = "voxcpm2"
         elif self._is_tts:
             model_type = tts_params.get("task_type", ["unknown"])[0]
         else:
