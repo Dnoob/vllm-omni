@@ -4,9 +4,7 @@ Client example for Covo-Audio-Chat with vllm-omni.
 Usage
 -----
 # Start the server first:
-#   CUDA_VISIBLE_DEVICES=0 vllm serve tencent/Covo-Audio-Chat --omni \
-#       --stage-configs-path vllm_omni/model_executor/stage_configs/covo_audio.yaml \
-#       --trust-remote-code
+#   CUDA_VISIBLE_DEVICES=0 vllm serve tencent/Covo-Audio-Chat --omni --trust-remote-code
 
 # Audio input chat (uses default sample audio if --audio-path not provided):
 python openai_chat_completion_client.py

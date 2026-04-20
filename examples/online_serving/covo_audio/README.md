@@ -13,9 +13,10 @@ Please refer to [README.md](../../../README.md)
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 vllm serve tencent/Covo-Audio-Chat --omni \
-    --stage-configs-path vllm_omni/model_executor/stage_configs/covo_audio.yaml \
     --trust-remote-code --port 18091
 ```
+
+> The default deploy config is located at `vllm_omni/deploy/covo_audio.yaml` and is loaded automatically by the model registry — no `--deploy-config` flag needed for default use.
 
 ### Send Request
 

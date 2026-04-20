@@ -2,33 +2,17 @@
 E2E tests for Covo-Audio-Chat model with audio input and audio/text output.
 """
 
-from pathlib import Path
-
 import pytest
 
-from tests.conftest import generate_synthetic_audio, modify_stage_config
-from tests.utils import hardware_test
+from tests.conftest import generate_synthetic_audio
+from tests.utils import get_deploy_config_path, hardware_test
 from vllm_omni.model_executor.models.covo_audio.prompt_utils import (
     COVO_AUDIO_INPUT_PREFIX,
     build_covo_audio_chat_prompt,
 )
 
 models = ["tencent/Covo-Audio-Chat"]
-
-
-def get_eager_config():
-    return modify_stage_config(
-        str(Path(__file__).parent.parent / "stage_configs" / "covo_audio_ci.yaml"),
-        updates={
-            "stage_args": {
-                0: {"engine_args.enforce_eager": "true"},
-                1: {"engine_args.enforce_eager": "true"},
-            },
-        },
-    )
-
-
-stage_config = get_eager_config()
+stage_config = get_deploy_config_path("covo_audio.yaml")
 test_params = [(model, stage_config) for model in models]
 
 

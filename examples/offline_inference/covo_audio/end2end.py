@@ -168,10 +168,7 @@ def parse_args():
     parser.add_argument(
         "--stage-configs-path",
         type=str,
-        default=os.path.join(
-            os.path.dirname(__file__),
-            "../../../vllm_omni/model_executor/stage_configs/covo_audio.yaml",
-        ),
+        default=None,
         help="Path to stage configs YAML file.",
     )
     parser.add_argument(

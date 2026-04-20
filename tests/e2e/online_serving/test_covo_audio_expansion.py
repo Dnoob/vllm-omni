@@ -5,7 +5,6 @@ E2E Online tests for Covo-Audio-Chat model.
 """
 
 import os
-from pathlib import Path
 
 os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 
@@ -16,14 +15,13 @@ from tests.conftest import (
     dummy_messages_from_mix_data,
     generate_synthetic_audio,
 )
-from tests.utils import hardware_test
+from tests.utils import get_deploy_config_path, hardware_test
 from vllm_omni.model_executor.models.covo_audio.prompt_utils import (
     COVO_AUDIO_SYSTEM_PROMPT,
 )
 
 model = "tencent/Covo-Audio-Chat"
-
-stage_config_path = str(Path(__file__).parent.parent / "stage_configs" / "covo_audio_ci.yaml")
+stage_config_path = get_deploy_config_path("covo_audio.yaml")
 
 test_params = [
     pytest.param(
