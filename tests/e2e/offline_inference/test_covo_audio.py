@@ -4,8 +4,9 @@ E2E tests for Covo-Audio-Chat model with audio input and audio/text output.
 
 import pytest
 
-from tests.conftest import generate_synthetic_audio
-from tests.utils import get_deploy_config_path, hardware_test
+from tests.helpers.mark import hardware_test
+from tests.helpers.media import generate_synthetic_audio
+from tests.helpers.stage_config import get_deploy_config_path
 from vllm_omni.model_executor.models.covo_audio.prompt_utils import (
     COVO_AUDIO_INPUT_PREFIX,
     build_covo_audio_chat_prompt,
