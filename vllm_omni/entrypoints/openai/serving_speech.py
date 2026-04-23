@@ -1613,7 +1613,7 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
             request.input,
         )
         return {"prompt_token_ids": prompt_ids}
-      
+
     # ---- Ming-flash-omni standalone-talker (TTS) helpers ----
 
     def _build_ming_prompt(self, request: OpenAICreateSpeechRequest) -> dict[str, Any]:

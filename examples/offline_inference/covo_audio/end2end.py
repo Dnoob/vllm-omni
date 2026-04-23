@@ -11,6 +11,7 @@ Usage:
 import os
 
 import soundfile as sf
+from vllm.multimodal.media.audio import load_audio
 from vllm.sampling_params import SamplingParams
 from vllm.utils.argparse_utils import FlexibleArgumentParser
 
@@ -35,10 +36,9 @@ def get_audio_query(
 
     if audio_path is None:
         audio_path = os.path.join(os.path.dirname(__file__), "sample_audio.wav")
-    import librosa
     import numpy as np
 
-    audio_signal, sr = librosa.load(audio_path, sr=sampling_rate)
+    audio_signal, sr = load_audio(audio_path, sr=sampling_rate)
     audio_data = (audio_signal.astype(np.float32), sr)
 
     return {
