@@ -200,6 +200,12 @@ _OMNI_MODELS = {
         "covo_audio_code2wav",
         "CovoAudioCode2WavForConditionalGeneration",
     ),
+    ## MOSS-TTS-Nano
+    "MossTTSNanoForCausalLM": (
+        "moss_tts_nano",
+        "modeling_moss_tts_nano",
+        "MossTTSNanoForGeneration",
+    ),
     "DyninOmniForConditionalGeneration": (
         "dynin_omni",
         "dynin_omni",
