@@ -4,57 +4,57 @@ This directory contains benchmark suites for evaluating different model families
 
 ## Benchmark families
 
-### [Qwen3-Omni](qwen3-omni/README.md) — Multimodal LLM (speech + text)
+### [TTS](tts/README.md) — Text-to-Speech
 
-End-to-end benchmark for the Qwen3-Omni MoE model, comparing HF Transformers (offline) against the vLLM-Omni multi-stage pipeline.
+Model-agnostic serving benchmarks for TTS models, including Qwen3-TTS and VoxCPM2.
 
-- **Layout**: `qwen3-omni/transformers/` (HF baseline), `qwen3-omni/vllm_omni/` (pipeline)
-- **Dataset**: SeedTTS top-100 prompts (see `build_dataset/`)
-- **Key metrics**: `overall_tps`, per-stage `*_tps_avg`, latency distribution via `*.stats.jsonl`
-
-### [Qwen3-TTS](qwen3-tts/README.md) — Text-to-Speech
-
-Benchmarks for Qwen3-TTS models (0.6B and 1.7B variants), including online serving and async streaming modes.
-
-- **Layout**: `qwen3-tts/transformers/` (HF baseline), `qwen3-tts/vllm_omni/` (serving + async streaming)
-- **Dataset**: 12 built-in English test prompts hardcoded in the benchmark scripts; cycled to reach the desired request count (default 50)
+- **Layout**: `tts/bench_tts.py` (serving benchmark driver), `tts/model_configs.yaml` (model registry), `tts/plot_results.py` (result plotting)
+- **Dataset**: Seed-TTS full or text-only datasets, plus bundled smoke/design prompts under `build_dataset/`
 - **Key metrics**: TTFP (time to first audio packet), E2E latency, RTF (real-time factor), throughput (audio seconds / wall-clock second)
 
 ### [Diffusion](diffusion/README.md) — Image and Video Generation
 
-Online-serving benchmark for diffusion models, sending requests to the vLLM OpenAI-compatible endpoint.
+Online-serving benchmark for diffusion image/video models, sending requests to the configured vLLM serving endpoint (`/v1/chat/completions`, `/v1/images/generations`, or `/v1/videos`, depending on backend/task).
 
-- **Tasks**: text-to-image, text-to-video, image-to-image, image-to-video
+- **Tasks**: text-to-image, text-to-video, image-to-image, image-to-video, text+image-to-image, text+image-to-video
 - **Datasets**: `vbench`, `trace`, `random`
-- **Key metrics**: throughput, latency percentiles, SLO attainment
+- **Key metrics**: request throughput, latency percentiles, optional SLO attainment
 
-### [Distributed](distributed/omni_connectors/README.md) — Cross-Node Transfer
+### [GLM-Image](glm_image/README.md) — Text-to-Image and Image-to-Image
 
-RDMA testing for cross-node distributed transfers using MooncakeTransferEngineConnector.
+Benchmarks for GLM-Image performance across HuggingFace baseline, vLLM-Omni offline inference, and vLLM-Omni online serving.
 
-- **Transfer modes**: copy, zerocopy, GPU (GPUDirect)
-- **Supports**: single-node and multi-node testing
+- **Layout**: `glm_image/huggingface/` (HF baseline), `glm_image/vllm-omni/` (offline inference), `glm_image/benchmark_glm_image.py` (online serving)
+- **Tasks**: text-to-image and image-to-image
+- **Key metrics**: request/image throughput, latency percentiles, optional per-stage pipeline timings
 
-### [Accuracy](accuracy/README.md) — Image Generation Quality
+### [Distributed](distributed/omni_connectors/README.md) — RDMA Connector Testing
 
-Accuracy benchmarks for image generation models, adapting external suites to vLLM-Omni serving and evaluation flows.
+RDMA environment setup and transfer tests for `MooncakeTransferEngineConnector`, including pytest-based single-node checks and manual cross-node benchmarks.
+
+- **Transfer modes**: `copy`, `zerocopy`, `gpu` (GPUDirect)
+- **Supports**: single-node pytest suites and manual multi-node/cross-node transfer testing
+
+### [Accuracy](accuracy/README.md) — Image Generation and Editing Quality
+
+Accuracy benchmarks for image generation/editing models, adapting external suites to vLLM-Omni serving and local judge-evaluation flows.
 
 - **Layout**: `accuracy/text_to_image/` (GEBench), `accuracy/image_to_image/` (GEdit-Bench)
 - **Method**: generation and judge scoring both run through local `vllm-omni serve` endpoints
 
-### Common metrics framework
+### Common serving metrics framework
 
-`vllm_omni/benchmarks/` provides a shared serving benchmark framework used across model families. Key metrics include:
+`vllm_omni/benchmarks/` extends `vllm bench serve --omni` with Omni-specific datasets, backends, and multimodal metrics. Key metrics include:
 
 - **Text output**: TTFT (time to first token), TPOT (time per output token), ITL (inter-token latency)
 - **Audio output**: TTFP (time to first audio packet), E2E latency, RTF (real-time factor)
-- **Throughput**: request throughput, output token throughput, audio throughput
+- **Throughput**: request throughput, output token throughput, total token throughput, audio throughput
 
-See `vllm_omni/benchmarks/serve.py` for the unified benchmark runner and `vllm_omni/benchmarks/metrics/` for metric definitions.
+See `vllm_omni/benchmarks/serve.py` for the `vllm bench serve --omni` runner wrapper and `vllm_omni/benchmarks/metrics/` for Omni metric definitions.
 
 ## Adding a new benchmark
 
-1. Create a subfolder under `benchmarks/<name>/` with scripts and a `README.md`.
-2. If comparing against HF Transformers, use a `transformers/` + `vllm_omni/` sub-layout (see `qwen3-omni/` or `qwen3-tts/` for examples).
-3. Add shared data utilities to `build_dataset/` if applicable.
+1. Create a subfolder under `benchmarks/<name>/` with scripts, configs if needed, and a `README.md`.
+2. If comparing against another runtime, use clear backend subfolders where applicable, such as `huggingface/` and `vllm-omni/`, or follow the shared TTS serving benchmark pattern in `tts/`.
+3. Add reusable dataset or prompt-building utilities to `build_dataset/` if applicable.
 4. Update this README with a link to the new benchmark family.
