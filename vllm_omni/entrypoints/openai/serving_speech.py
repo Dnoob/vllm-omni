@@ -1873,7 +1873,7 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
             request.input,
         )
         return {"prompt_token_ids": prompt_ids}
-      
+
     def _apply_cosyvoice3_dynamic_tokens(
         self,
         sampling_params_list: list,
