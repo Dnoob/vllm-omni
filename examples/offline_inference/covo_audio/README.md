@@ -16,7 +16,7 @@ cd examples/offline_inference/covo_audio
 
 ### Audio input chat
 
-Using the bundled sample audio (default):
+Using the default audio asset:
 ```bash
 python end2end.py
 ```
@@ -37,7 +37,7 @@ python end2end.py -m /path/to/Covo-Audio-Chat --output-dir ./my_output
 |----------|-------|---------|-------------|
 | `--model-name` | `-m` | `tencent/Covo-Audio-Chat` | Model path or HuggingFace model ID |
 | `--text` | `-t` | `请回答这段音频里的问题。` | Text prompt / question for the audio |
-| `--audio-path` | `-a` | `sample_audio.wav` | Path to local audio file |
+| `--audio-path` | `-a` | default audio asset | Path to local audio file |
 | `--sampling-rate` | | `16000` | Sampling rate for audio loading (Hz) |
 | `--output-dir` | | `./output_audio` | Output directory for generated files |
 | `--num-prompts` | | `1` | Number of prompts to generate |

@@ -27,6 +27,12 @@ cd examples/online_serving/covo_audio
 
 #### Audio input chat
 
+Using the default audio asset:
+```bash
+python openai_chat_completion_client.py
+```
+
+Using a custom audio file:
 ```bash
 python openai_chat_completion_client.py --audio-path /path/to/audio.wav
 ```
@@ -42,7 +48,7 @@ python openai_chat_completion_client.py --audio-path /path/to/audio.wav --stream
 The Python client supports the following arguments:
 
 - `--prompt` (or `-p`): Text prompt (default: `"请回答这段音频里的问题。"`)
-- `--audio-path`: Path to audio file. Supports local file paths or HTTP/HTTPS URLs. Common audio formats: WAV, MP3, OGG, FLAC, M4A. Uses a default sample audio if omitted
+- `--audio-path`: Path to audio file. Supports local file paths or HTTP/HTTPS URLs. Common audio formats: WAV, MP3, OGG, FLAC, M4A. Uses the default audio asset if omitted
 - `--output-audio-path` (or `-o`): Output path for generated audio (default: `./audio_0.wav`)
 - `--model`: Model name for the API. Auto-detected from server if omitted
 - `--stream`: Enable streaming mode

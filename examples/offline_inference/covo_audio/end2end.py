@@ -11,6 +11,7 @@ Usage:
 import os
 
 import soundfile as sf
+from vllm.assets.audio import AudioAsset
 from vllm.multimodal.media.audio import load_audio
 from vllm.sampling_params import SamplingParams
 from vllm.utils.argparse_utils import FlexibleArgumentParser
@@ -35,11 +36,12 @@ def get_audio_query(
     prompt = build_covo_audio_chat_prompt(user_content)
 
     if audio_path is None:
-        audio_path = os.path.join(os.path.dirname(__file__), "sample_audio.wav")
-    import numpy as np
+        audio_data = AudioAsset("mary_had_lamb").audio_and_sample_rate
+    else:
+        import numpy as np
 
-    audio_signal, sr = load_audio(audio_path, sr=sampling_rate)
-    audio_data = (audio_signal.astype(np.float32), sr)
+        audio_signal, sr = load_audio(audio_path, sr=sampling_rate)
+        audio_data = (audio_signal.astype(np.float32), sr)
 
     return {
         "prompt": prompt,

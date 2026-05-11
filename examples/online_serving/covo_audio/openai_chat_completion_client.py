@@ -6,7 +6,7 @@ Usage
 # Start the server first:
 #   CUDA_VISIBLE_DEVICES=0 vllm serve tencent/Covo-Audio-Chat --omni --trust-remote-code
 
-# Audio input chat (uses default sample audio if --audio-path not provided):
+# Audio input chat (uses default audio asset if --audio-path not provided):
 python openai_chat_completion_client.py
 python openai_chat_completion_client.py --audio-path /path/to/audio.wav
 
@@ -20,6 +20,7 @@ import sys
 import time
 
 from openai import OpenAI
+from vllm.assets.audio import AudioAsset
 from vllm.utils.argparse_utils import FlexibleArgumentParser
 
 from vllm_omni.model_executor.models.covo_audio.prompt_utils import (
@@ -43,7 +44,7 @@ def encode_base64_content_from_file(file_path: str) -> str:
 def get_audio_url(audio_path: str | None) -> str:
     """Convert an audio path to a data URL for the API."""
     if not audio_path:
-        audio_path = os.path.join(os.path.dirname(__file__), "sample_audio.wav")
+        return AudioAsset("mary_had_lamb").url
 
     if audio_path.startswith(("data:", "http://", "https://")):
         return audio_path
@@ -187,7 +188,7 @@ def parse_args():
         "--audio-path",
         type=str,
         default=None,
-        help="Path to audio file (for --query-type audio).",
+        help="Path to audio file. Uses default audio asset if omitted.",
     )
     parser.add_argument(
         "--output-audio-path",
