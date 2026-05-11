@@ -12,6 +12,7 @@
 #     GPU→CPU sync (int(code.flatten()[0]) in covo_audio.py) which is
 #     illegal during CUDA graph capture.
 async_chunk: false
+trust_remote_code: true
 
 stages:
   - stage_id: 0

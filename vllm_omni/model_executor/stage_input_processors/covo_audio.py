@@ -6,22 +6,11 @@ from vllm_omni.model_executor.models.covo_audio.config_covo_audio import COVO_AU
 
 
 def llm2code2wav(
-    stage_list: list[Any],
-    engine_input_source: list[int],
-    prompt=None,
+    source_outputs: list[Any],
+    prompt: Any = None,
     requires_multimodal_data: bool = False,
 ) -> list[OmniTokensPrompt]:
-    if not engine_input_source:
-        raise ValueError("engine_input_source cannot be empty")
-
-    source_stage_id = engine_input_source[0]
-    if source_stage_id >= len(stage_list):
-        raise IndexError(f"Invalid stage_id: {source_stage_id}")
-
-    if stage_list[source_stage_id].engine_outputs is None:
-        raise RuntimeError(f"Stage {source_stage_id} has no outputs yet")
-
-    talker_outputs = stage_list[source_stage_id].engine_outputs
+    talker_outputs = source_outputs
     code2wav_inputs = []
 
     for i, talker_output in enumerate(talker_outputs):
