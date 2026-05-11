@@ -44,4 +44,4 @@ def test_audio_to_audio(omni_runner, omni_runner_handler) -> None:
         "audios": (audio, 16000),
         "modalities": ["audio"],
     }
-    omni_runner_handler.send_request(request_config)
+    omni_runner_handler.send_omni_request(request_config)
